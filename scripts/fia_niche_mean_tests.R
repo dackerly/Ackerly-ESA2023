@@ -101,7 +101,6 @@ plots$aet <- extract(aet, plots)
 plots <- as.data.frame(plots)
 
 
-
 # which community cwd statistic is best predicted by cwd?
 cwdsumm <- data.frame(commstat=cwdnames, ols_es=NA, ols_r2=NA)
 for(i in 1:nrow(cwdsumm)){
@@ -119,28 +118,8 @@ library(stringr)
 cwdsumm$commstat <- str_remove_all(string=cwdsumm$commstat,
                                    pattern="cwd_")
 
-library(ggplot2)
-cwdsumm_plot <- ggplot(cwdsumm, aes(x=commstat, y=ols_es, color=ols_r2))+
-  ggtitle("CWD")+
-  geom_hline(yintercept=1, lty="dotted")+
-  geom_hline(yintercept=0)+
-  xlab("Community Mean Statistic")+
-  ylab("Effect Size of Macroclimatic Predictor")+
-  geom_point(size=3)+
-  scale_color_viridis_c(name="R²",
-                        limits=c(
-                          min(c(cwdsumm$ols_r2, aetsumm$ols_r2)),
-                          max(c(cwdsumm$ols_r2, aetsumm$ols_r2))
-                        ))+
-  scale_y_continuous(limits=c(
-    min(c(cwdsumm$ols_es, aetsumm$ols_es)),
-    max(c(cwdsumm$ols_es, aetsumm$ols_es))
-  ))+
-  theme_bw()+
-  theme(legend.position="none")
 
-
-# which community aet statistic is best predicted by aet?
+# which community cwd statistic is best predicted by aet?
 aetsumm <- data.frame(commstat=aetnames, ols_es=NA, ols_r2=NA)
 for(i in 1:nrow(aetsumm)){
   y <- plots[aetsumm[i,"commstat"]]
@@ -156,11 +135,34 @@ aetsumm <- subset(aetsumm, commstat!= "aet_N" & commstat!= "aet_X")
 aetsumm$commstat <- str_remove_all(string=aetsumm$commstat,
                                    pattern="aet_")
 
+
+
+### plots
+library(ggplot2)
+cwdsumm_plot <- ggplot(cwdsumm, aes(x=commstat, y=ols_es, color=ols_r2))+
+  ggtitle("CWD")+
+  geom_hline(yintercept=1, lty="dotted")+
+  geom_hline(yintercept=0)+
+  xlab("Community Mean Statistic Used as Response")+
+  ylab("Effect Size of Macroclimatic Predictor")+
+  geom_point(size=3)+
+  scale_color_viridis_c(name="R²",
+                        limits=c(
+                          min(c(cwdsumm$ols_r2, aetsumm$ols_r2)),
+                          max(c(cwdsumm$ols_r2, aetsumm$ols_r2))
+                        ))+
+  scale_y_continuous(limits=c(
+    min(c(cwdsumm$ols_es, aetsumm$ols_es)),
+    max(c(cwdsumm$ols_es, aetsumm$ols_es))
+  ))+
+  theme_bw()+
+  theme(legend.position="none")
+
 aetsumm_plot <- ggplot(aetsumm, aes(x=commstat, y=ols_es, color=ols_r2))+
   ggtitle("AET")+
   geom_hline(yintercept=1, lty="dotted")+
   geom_hline(yintercept=0)+
-  xlab("Community Mean Statistic")+
+  xlab("Community Mean Statistic Used as Response")+
   geom_point(size=3)+
   scale_color_viridis_c(name="R²",
                         limits=c(
