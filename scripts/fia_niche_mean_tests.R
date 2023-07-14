@@ -9,7 +9,7 @@ options(scipen=9999)
 library(foreach)
 library(doParallel)
 detectCores() # this tells you how many are available in your current environment
-cores <- 10 # ADJUST TO THE NUMBER OF PROCESSOR CORES YOU WANT TO USE FOR PARALLELIZATION
+cores <- 4 # ADJUST TO THE NUMBER OF PROCESSOR CORES YOU WANT TO USE FOR PARALLELIZATION
 
 # read previously prepped subplot data
 subplots <- readRDS("./data/kr_fia_data_products/current_subplots.RDS")
