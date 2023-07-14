@@ -98,46 +98,82 @@ aet <- raster("./data/gis_data/CAaet.tiff")
 plots <- spTransform(plots, crs(aet))
 plots$aet <- extract(aet, plots)
 
-tmn <- raster("./data/gis_data/CAtmn.tiff")
-plots <- spTransform(plots, crs(tmn))
-plots$tmn <- extract(tmn, plots)
-
 plots <- as.data.frame(plots)
 
+
+
 # which community cwd statistic is best predicted by cwd?
-corrs <- data.frame(commstat=varnames, cwdcorr=NA, aetcorr=NA, tmncorr=NA)
-for(i in 1:nrow(corrs)){
-  corrs[i, "cwdcorr"] <- cor(plots$cwd, plots[varnames[i]])
-  corrs[i, "aetcorr"] <- cor(plots$aet, plots[varnames[i]])
-  corrs[i, "tmncorr"] <- cor(plots$tmn, plots[varnames[i]])
+cwdsumm <- data.frame(commstat=cwdnames, ols_es=NA, ols_r2=NA)
+for(i in 1:nrow(cwdsumm)){
+  y <- plots[cwdsumm[i,"commstat"]]
+  mod <- lm(y[,1] ~ plots$cwd)
+  cwdsumm[i, "ols_es"] <- mod$coefficients[2]
+  cwdsumm[i, "ols_r2"] <- summary(mod)$adj.r.squared
 }
 
-corrs
-# looks like the pmn and pmd values work best
+# X and N look like they're not meant to be niche means
+cwdsumm <- subset(cwdsumm, commstat!= "cwd_N" & commstat!= "cwd_X")
 
-cwd_pmd_mod <- lm(cwd ~ cwd_pmd, data=plots)
-cwd_pmn_mod <- lm(cwd ~ cwd_pmn, data=plots)
-summary(cwd_pmd_mod)
-summary(cwd_pmn_mod)
-# coefficients are very close to 1
+# prep summary data for plotting
+library(stringr)
+cwdsumm$commstat <- str_remove_all(string=cwdsumm$commstat,
+                                   pattern="cwd_")
 
-aet_pmd_mod <- lm(aet ~ aet_pmd, data=plots)
-aet_pmn_mod <- lm(aet ~ aet_pmn, data=plots)
-summary(aet_pmd_mod)
-summary(aet_pmn_mod)
-# coefficients greatly exceed 1. undesirable property?
-# look at other commstats with high corrs
+library(ggplot2)
+cwdsumm_plot <- ggplot(cwdsumm, aes(x=commstat, y=ols_es, color=ols_r2))+
+  ggtitle("CWD")+
+  geom_hline(yintercept=1, lty="dotted")+
+  geom_hline(yintercept=0)+
+  xlab("Community Mean Statistic")+
+  ylab("Effect Size of Macroclimatic Predictor")+
+  geom_point(size=3)+
+  scale_color_viridis_c(name="R²",
+                        limits=c(
+                          min(c(cwdsumm$ols_r2, aetsumm$ols_r2)),
+                          max(c(cwdsumm$ols_r2, aetsumm$ols_r2))
+                        ))+
+  scale_y_continuous(limits=c(
+    min(c(cwdsumm$ols_es, aetsumm$ols_es)),
+    max(c(cwdsumm$ols_es, aetsumm$ols_es))
+  ))+
+  theme_bw()+
+  theme(legend.position="none")
 
-aet_mwm_mod <- lm(aet ~ aet_mwm, data=plots)
-summary(aet_mwm_mod)
-# closer, but still 1.3
 
-aet_opt_mod <- lm(aet ~ aet_opt, data=plots)
-summary(aet_opt_mod)
-# now down to only 0.33
-# aet is much tricker than cwd. maybe cwd is a better variable to link
-# species occurrence to climate from a causal perspective.
+# which community aet statistic is best predicted by aet?
+aetsumm <- data.frame(commstat=aetnames, ols_es=NA, ols_r2=NA)
+for(i in 1:nrow(aetsumm)){
+  y <- plots[aetsumm[i,"commstat"]]
+  mod <- lm(y[,1] ~ plots$aet)
+  aetsumm[i, "ols_es"] <- mod$coefficients[2]
+  aetsumm[i, "ols_r2"] <- summary(mod)$adj.r.squared
+}
 
+# X and N look like they're not meant to be niche means
+aetsumm <- subset(aetsumm, commstat!= "aet_N" & commstat!= "aet_X")
 
+# prep summary data for plotting
+aetsumm$commstat <- str_remove_all(string=aetsumm$commstat,
+                                   pattern="aet_")
 
+aetsumm_plot <- ggplot(aetsumm, aes(x=commstat, y=ols_es, color=ols_r2))+
+  ggtitle("AET")+
+  geom_hline(yintercept=1, lty="dotted")+
+  geom_hline(yintercept=0)+
+  xlab("Community Mean Statistic")+
+  ylab("Effect Size of Macroclimatic Predictor")+
+  geom_point(size=3)+
+  scale_color_viridis_c(name="R²",
+                        limits=c(
+                          min(c(cwdsumm$ols_r2, aetsumm$ols_r2)),
+                          max(c(cwdsumm$ols_r2, aetsumm$ols_r2))
+                        ))+
+  scale_y_continuous(limits=c(
+    min(c(cwdsumm$ols_es, aetsumm$ols_es)),
+    max(c(cwdsumm$ols_es, aetsumm$ols_es))
+  ))+
+  theme_bw()
 
+library(patchwork)
+(cwdsumm_plot | aetsumm_plot)
+ggsave("fia_test_results_summary.png", height=5, width=10)
