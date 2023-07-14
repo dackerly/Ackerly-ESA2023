@@ -135,7 +135,9 @@ aetsumm <- subset(aetsumm, commstat!= "aet_N" & commstat!= "aet_X")
 aetsumm$commstat <- str_remove_all(string=aetsumm$commstat,
                                    pattern="aet_")
 
-
+# order by effect size in plots
+cwdsumm$commstat <- factor(cwdsumm$commstat, levels=unique(cwdsumm$commstat[order(-cwdsumm$ols_es)]), ordered=TRUE)
+aetsumm$commstat <- factor(aetsumm$commstat, levels=unique(aetsumm$commstat[order(-aetsumm$ols_es)]), ordered=TRUE)
 
 ### plots
 library(ggplot2)
