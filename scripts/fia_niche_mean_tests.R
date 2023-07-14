@@ -161,7 +161,6 @@ aetsumm_plot <- ggplot(aetsumm, aes(x=commstat, y=ols_es, color=ols_r2))+
   geom_hline(yintercept=1, lty="dotted")+
   geom_hline(yintercept=0)+
   xlab("Community Mean Statistic")+
-  ylab("Effect Size of Macroclimatic Predictor")+
   geom_point(size=3)+
   scale_color_viridis_c(name="R²",
                         limits=c(
@@ -172,7 +171,8 @@ aetsumm_plot <- ggplot(aetsumm, aes(x=commstat, y=ols_es, color=ols_r2))+
     min(c(cwdsumm$ols_es, aetsumm$ols_es)),
     max(c(cwdsumm$ols_es, aetsumm$ols_es))
   ))+
-  theme_bw()
+  theme_bw()+
+  theme(axis.title.y=element_blank())
 
 library(patchwork)
 (cwdsumm_plot | aetsumm_plot)
