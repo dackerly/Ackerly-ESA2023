@@ -181,3 +181,8 @@ aetsumm_plot <- ggplot(aetsumm, aes(x=commstat, y=ols_es, color=ols_r2))+
 library(patchwork)
 (cwdsumm_plot | aetsumm_plot)
 ggsave("fia_test_results_summary.png", height=5, width=10)
+
+cwdsumm_plot
+ggsave("fia_test_results_summary_cwd.png", height=5, width=5)
+aetsumm_plot
+ggsave("fia_test_results_summary_aet.png", height=5, width=5)
