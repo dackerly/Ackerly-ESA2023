@@ -108,6 +108,9 @@ for(i in 1:nrow(cwdsumm)){
   mod <- lm(y[,1] ~ plots$cwd)
   cwdsumm[i, "ols_es"] <- mod$coefficients[2]
   cwdsumm[i, "ols_r2"] <- summary(mod)$adj.r.squared
+  altmod <- lm(plots$cwd ~ y[,1])
+  cwdsumm[i, "alt_ols_es"] <- altmod$coefficients[2]
+  cwdsumm[i, "alt_ols_mse"] <- mean(altmod$residuals^2)
 }
 
 # X and N look like they're not meant to be niche means
@@ -126,6 +129,9 @@ for(i in 1:nrow(aetsumm)){
   mod <- lm(y[,1] ~ plots$aet)
   aetsumm[i, "ols_es"] <- mod$coefficients[2]
   aetsumm[i, "ols_r2"] <- summary(mod)$adj.r.squared
+  altmod <- lm(plots$aet ~ y[,1])
+  aetsumm[i, "alt_ols_es"] <- altmod$coefficients[2]
+  aetsumm[i, "alt_ols_mse"] <- mean(altmod$residuals^2)
 }
 
 # X and N look like they're not meant to be niche means
@@ -178,11 +184,84 @@ aetsumm_plot <- ggplot(aetsumm, aes(x=commstat, y=ols_es, color=ols_r2))+
   theme_bw()+
   theme(axis.title.y=element_blank())
 
-library(patchwork)
-(cwdsumm_plot | aetsumm_plot)
-ggsave("fia_test_results_summary.png", height=5, width=10)
-
 cwdsumm_plot
 ggsave("fia_test_results_summary_cwd.png", height=5, width=5)
 aetsumm_plot
 ggsave("fia_test_results_summary_aet.png", height=5, width=5)
+
+
+# alternate plots for the inverse regression (cwd ~ community stat)
+# the point for each model is now color coded by MSE, the primary statistic of interest
+cwdsumm$commstat <- factor(cwdsumm$commstat, levels=unique(cwdsumm$commstat[order(cwdsumm$alt_ols_mse)]), ordered=TRUE)
+aetsumm$commstat <- factor(aetsumm$commstat, levels=unique(aetsumm$commstat[order(aetsumm$alt_ols_mse)]), ordered=TRUE)
+
+cwdsumm_plot_alt <- ggplot(cwdsumm, aes(x=commstat, y=alt_ols_mse, fill=alt_ols_es))+
+  ggtitle("CWD")+
+  xlab("Community Mean Statistic Used as Predictor")+
+  ylab("MSE for Macroclimatic Response")+
+  geom_point(size=3, shape=21)+
+  scale_fill_gradient2(name="Effect\nSize",
+                        limits=c(
+                          min(c(cwdsumm$alt_ols_es, aetsumm$alt_ols_es)),
+                          max(c(cwdsumm$alt_ols_es, aetsumm$alt_ols_es))
+                        ))+
+  scale_y_continuous(limits=c(
+    min(c(cwdsumm$alt_ols_mse, aetsumm$alt_ols_mse)),
+    max(c(cwdsumm$alt_ols_mse, aetsumm$alt_ols_mse))
+  ))+
+  theme_bw()+
+  theme(legend.position="none")
+cwdsumm_plot_alt
+
+aetsumm_plot_alt <- ggplot(aetsumm, aes(x=commstat, y=alt_ols_mse, fill=alt_ols_es))+
+  ggtitle("AET")+
+  xlab("Community Mean Statistic Used as Predictor")+
+  ylab("MSE for Macroclimatic Response")+
+  geom_point(size=3, shape=21)+
+  scale_fill_gradient2(name="Effect\nSize",
+                       limits=c(
+                         min(c(cwdsumm$alt_ols_es, aetsumm$alt_ols_es)),
+                         max(c(cwdsumm$alt_ols_es, aetsumm$alt_ols_es))
+                       ))+
+  scale_y_continuous(limits=c(
+    min(c(cwdsumm$alt_ols_mse, aetsumm$alt_ols_mse)),
+    max(c(cwdsumm$alt_ols_mse, aetsumm$alt_ols_mse))
+  ))+
+  theme_bw()+
+  theme(axis.title.y=element_blank())
+aetsumm_plot_alt
+
+cwdsumm_plot_alt
+ggsave("fia_test_results_summary_cwd_alt.png", height=5, width=5)
+aetsumm_plot_alt
+ggsave("fia_test_results_summary_aet_alt.png", height=5, width=5)
+
+
+
+
+### scatterplots for each community mean statistic
+cwdnames <- subset(cwdnames, cwdnames!="cwd_X" & cwdnames!="cwd_N")
+cwdplots <- plots[c("cwd", cwdnames)]
+
+aetnames <- subset(aetnames, aetnames!="aet_X" & aetnames!="aet_N")
+aetplots <- plots[c("aet", aetnames)]
+
+for(i in 2:ncol(cwdplots)){
+  ggplot(plots, aes(x=cwd, y=cwdplots[,i]))+
+    geom_point()+
+    geom_smooth(method=lm)+
+    xlab("CWD (mm)")+
+    ylab(names(cwdplots)[i])+
+    theme_bw()
+  ggsave(paste(names(cwdplots)[i], "vs_cwd_scatter.png", sep=""), width=5, height=5)
+}
+
+for(i in 2:ncol(aetplots)){
+  ggplot(plots, aes(x=aet, y=aetplots[,i]))+
+    geom_point()+
+    geom_smooth(method=lm)+
+    xlab("aet (mm)")+
+    ylab(names(aetplots)[i])+
+    theme_bw()
+  ggsave(paste(names(aetplots)[i], "vs_aet_scatter.png", sep=""), width=5, height=5)
+}
