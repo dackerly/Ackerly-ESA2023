@@ -9,7 +9,7 @@ options(scipen=9999)
 library(foreach)
 library(doParallel)
 detectCores() # this tells you how many are available in your current environment
-cores <- 4 # ADJUST TO THE NUMBER OF PROCESSOR CORES YOU WANT TO USE FOR PARALLELIZATION
+cores <- 10 # ADJUST TO THE NUMBER OF PROCESSOR CORES YOU WANT TO USE FOR PARALLELIZATION
 
 # read previously prepped subplot data
 subplots <- readRDS("./data/kr_fia_data_products/current_subplots.RDS")
@@ -102,15 +102,13 @@ plots <- as.data.frame(plots)
 
 
 # which community cwd statistic is best predicted by cwd?
-cwdsumm <- data.frame(commstat=cwdnames, ols_es=NA, ols_r2=NA)
+cwdsumm <- data.frame(commstat=cwdnames, ols_es=NA, ols_r2=NA, mse1to1=NA)
 for(i in 1:nrow(cwdsumm)){
   y <- plots[cwdsumm[i,"commstat"]]
   mod <- lm(y[,1] ~ plots$cwd)
   cwdsumm[i, "ols_es"] <- mod$coefficients[2]
   cwdsumm[i, "ols_r2"] <- summary(mod)$adj.r.squared
-  altmod <- lm(plots$cwd ~ y[,1])
-  cwdsumm[i, "alt_ols_es"] <- altmod$coefficients[2]
-  cwdsumm[i, "alt_ols_mse"] <- mean(altmod$residuals^2)
+  cwdsumm[i, "mse1to1"] <- mean((y[,1]-plots$cwd)^2)
 }
 
 # X and N look like they're not meant to be niche means
@@ -122,16 +120,14 @@ cwdsumm$commstat <- str_remove_all(string=cwdsumm$commstat,
                                    pattern="cwd_")
 
 
-# which community cwd statistic is best predicted by aet?
-aetsumm <- data.frame(commstat=aetnames, ols_es=NA, ols_r2=NA)
+# which community aet statistic is best predicted by aet?
+aetsumm <- data.frame(commstat=aetnames, ols_es=NA, ols_r2=NA, mse1to1=NA)
 for(i in 1:nrow(aetsumm)){
   y <- plots[aetsumm[i,"commstat"]]
   mod <- lm(y[,1] ~ plots$aet)
   aetsumm[i, "ols_es"] <- mod$coefficients[2]
   aetsumm[i, "ols_r2"] <- summary(mod)$adj.r.squared
-  altmod <- lm(plots$aet ~ y[,1])
-  aetsumm[i, "alt_ols_es"] <- altmod$coefficients[2]
-  aetsumm[i, "alt_ols_mse"] <- mean(altmod$residuals^2)
+  aetsumm[i, "mse1to1"] <- mean((y[,1]-plots$aet)^2)
 }
 
 # X and N look like they're not meant to be niche means
@@ -147,13 +143,13 @@ aetsumm$commstat <- factor(aetsumm$commstat, levels=unique(aetsumm$commstat[orde
 
 ### plots
 library(ggplot2)
-cwdsumm_plot <- ggplot(cwdsumm, aes(x=commstat, y=ols_es, color=ols_r2))+
+cwdsumm_plot <- ggplot(cwdsumm, aes(x=commstat, y=ols_es, color=ols_r2, size=mse1to1))+
   ggtitle("CWD")+
   geom_hline(yintercept=1, lty="dotted")+
   geom_hline(yintercept=0)+
-  xlab("Community Mean Statistic Used as Response")+
+  xlab("Community Weighted Niche Metric")+
   ylab("Effect Size of Macroclimatic Predictor")+
-  geom_point(size=3)+
+  geom_point()+
   scale_color_viridis_c(name="R²",
                         limits=c(
                           min(c(cwdsumm$ols_r2, aetsumm$ols_r2)),
@@ -163,15 +159,16 @@ cwdsumm_plot <- ggplot(cwdsumm, aes(x=commstat, y=ols_es, color=ols_r2))+
     min(c(cwdsumm$ols_es, aetsumm$ols_es)),
     max(c(cwdsumm$ols_es, aetsumm$ols_es))
   ))+
+  scale_size_continuous(name="1:1\nMSE")+
   theme_bw()+
   theme(legend.position="none")
 
-aetsumm_plot <- ggplot(aetsumm, aes(x=commstat, y=ols_es, color=ols_r2))+
+aetsumm_plot <- ggplot(aetsumm, aes(x=commstat, y=ols_es, color=ols_r2, size=mse1to1))+
   ggtitle("AET")+
   geom_hline(yintercept=1, lty="dotted")+
   geom_hline(yintercept=0)+
-  xlab("Community Mean Statistic Used as Response")+
-  geom_point(size=3)+
+  xlab("Community Weighted Niche Metric")+
+  geom_point()+
   scale_color_viridis_c(name="R²",
                         limits=c(
                           min(c(cwdsumm$ols_r2, aetsumm$ols_r2)),
@@ -181,62 +178,14 @@ aetsumm_plot <- ggplot(aetsumm, aes(x=commstat, y=ols_es, color=ols_r2))+
     min(c(cwdsumm$ols_es, aetsumm$ols_es)),
     max(c(cwdsumm$ols_es, aetsumm$ols_es))
   ))+
+  scale_size_continuous(name="1:1\nMSE")+
   theme_bw()+
   theme(axis.title.y=element_blank())
 
 cwdsumm_plot
-ggsave("fia_test_results_summary_cwd.png", height=5, width=5)
+ggsave("./results/kr_fia_results/cch_niches_fia_plots_summary_cwd.png", height=5, width=5)
 aetsumm_plot
-ggsave("fia_test_results_summary_aet.png", height=5, width=5)
-
-
-# alternate plots for the inverse regression (cwd ~ community stat)
-# the point for each model is now color coded by MSE, the primary statistic of interest
-cwdsumm$commstat <- factor(cwdsumm$commstat, levels=unique(cwdsumm$commstat[order(cwdsumm$alt_ols_mse)]), ordered=TRUE)
-aetsumm$commstat <- factor(aetsumm$commstat, levels=unique(aetsumm$commstat[order(aetsumm$alt_ols_mse)]), ordered=TRUE)
-
-cwdsumm_plot_alt <- ggplot(cwdsumm, aes(x=commstat, y=alt_ols_mse, fill=alt_ols_es))+
-  ggtitle("CWD")+
-  xlab("Community Mean Statistic Used as Predictor")+
-  ylab("MSE for Macroclimatic Response")+
-  geom_point(size=3, shape=21)+
-  scale_fill_gradient2(name="Effect\nSize",
-                        limits=c(
-                          min(c(cwdsumm$alt_ols_es, aetsumm$alt_ols_es)),
-                          max(c(cwdsumm$alt_ols_es, aetsumm$alt_ols_es))
-                        ))+
-  scale_y_continuous(limits=c(
-    min(c(cwdsumm$alt_ols_mse, aetsumm$alt_ols_mse)),
-    max(c(cwdsumm$alt_ols_mse, aetsumm$alt_ols_mse))
-  ))+
-  theme_bw()+
-  theme(legend.position="none")
-cwdsumm_plot_alt
-
-aetsumm_plot_alt <- ggplot(aetsumm, aes(x=commstat, y=alt_ols_mse, fill=alt_ols_es))+
-  ggtitle("AET")+
-  xlab("Community Mean Statistic Used as Predictor")+
-  ylab("MSE for Macroclimatic Response")+
-  geom_point(size=3, shape=21)+
-  scale_fill_gradient2(name="Effect\nSize",
-                       limits=c(
-                         min(c(cwdsumm$alt_ols_es, aetsumm$alt_ols_es)),
-                         max(c(cwdsumm$alt_ols_es, aetsumm$alt_ols_es))
-                       ))+
-  scale_y_continuous(limits=c(
-    min(c(cwdsumm$alt_ols_mse, aetsumm$alt_ols_mse)),
-    max(c(cwdsumm$alt_ols_mse, aetsumm$alt_ols_mse))
-  ))+
-  theme_bw()+
-  theme(axis.title.y=element_blank())
-aetsumm_plot_alt
-
-cwdsumm_plot_alt
-ggsave("fia_test_results_summary_cwd_alt.png", height=5, width=5)
-aetsumm_plot_alt
-ggsave("fia_test_results_summary_aet_alt.png", height=5, width=5)
-
-
+ggsave("./results/kr_fia_results/cch_niches_fia_plots_summary_aet.png", height=5, width=5)
 
 
 ### scatterplots for each community mean statistic
