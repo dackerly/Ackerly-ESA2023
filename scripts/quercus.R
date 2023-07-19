@@ -1,3 +1,4 @@
+rm(list=ls())
 aet <- read.csv('data/quercus/quercusAET.csv')
 cwd <- read.csv('data/quercus/quercusCWD.csv')
 p50 <- read.csv('data/quercus/quercusP50.csv')
