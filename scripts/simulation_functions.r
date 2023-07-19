@@ -4,7 +4,7 @@ generate_sites <- function(n_sites = 1000,
                            n_dims = 2,
                            eta = 1, # controls strength of correlations among variables
                            filter = NULL){
-  rho <- rethinking::rlkjcorr(1, n_dims, eta)
+  rho <- trialr::rlkjcorr(1, n_dims, eta)
   g <- mvtnorm::rmvnorm(n_sites, sigma = rho)
   colnames(g) <- paste0("clim", 1:n_dims)
   g <- apply(g, 2, scale)
@@ -33,7 +33,7 @@ generate_species <- function(id, sites,
   vars <- colnames(sites)
   mu <- rnorm(n_dims, mu_mu, mu_sigma) # niche means
   tau <- diag(rgamma(n_dims, tau_shape, tau_rate)) # variance
-  rho <- rethinking::rlkjcorr(1, n_dims, rho_eta) # correlation
+  rho <- trialr::rlkjcorr(1, n_dims, rho_eta) # correlation
   sigma <- tau %*% rho %*% tau # covariance matrix
   lambda <- rnorm(n_dims, lambda_mu, lambda_sigma) # niche asymmetry
   alpha <- rbeta(1, alpha_shape1, alpha_shape2) # max suitability at mu
