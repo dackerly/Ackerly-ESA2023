@@ -24,7 +24,7 @@ yeo_johnson <- function(y, l){
 # randomly sample niche parameters for one species
 generate_species <- function(id, sites, 
                              # all the following are hyperparameters controling distributions of niche params:
-                             mu_mu = 0, mu_sigma = 3,
+                             mu_mu = 0, mu_sigma = 2,
                              tau_shape = 3, tau_rate = 3,
                              rho_eta = 1,
                              lambda_mu = 0, lambda_sigma = .5,
@@ -70,23 +70,31 @@ assemble_community <- function(sites, species){
 
 # fit niche models to sample data
 fit_sdms <- function(community, sites, method = "glm", filter = NULL){
+  
+  # build squared and interaction terms
   sites_df <- as.data.frame(sites)
   sites2 <- sites^2
   colnames(sites2) <- paste0(colnames(sites2), "sq")
   sites2 <- cbind(sites, sites2)
+  # sitesx <- apply(combn(1:ncol(sites), 2), 2, 
+  #       function(x) sites[,x[1]] * sites[,x[2]])
+  # colnames(sitesx) <- paste0("x", 1:ncol(sitesx))
+  # sites2 <- cbind(sites2, sitesx)
   sites2_df <- as.data.frame(sites2)
   
+  # if requested, include only a subset of sites for model training
   if(!is.null(filter)){
     i <- filter(sites)
   } else {
     i <- 1:nrow(sites)
-  } 
+  }
   
+  # fit and predict
   apply(community, 2, function(x){
     if(sum(x[i]) == 0) return(rep(NA, nrow(community)))
     if(method == "maxent"){
       fit <- dismo::maxent(sites_df[i,], x[i])
-      return(predict(fit, sites_df))
+      return(dismo::predict(fit, sites_df))
     }
     if(method == "glm"){
       df <- as.data.frame(cbind(x = x[i], sites2[i,]))
@@ -196,9 +204,9 @@ rep_simulations <- function(n_sims = 10,
   y <- future_map_dfr(1:n_sims, function(i){
     set.seed(i * seed)
     simulate(...) %>%
-                       format_evals() %>%
-                       mutate(sim = i) %>%
-                       suppressMessages()
+      format_evals() %>%
+      mutate(sim = i) %>%
+      suppressMessages()
   })
   if(n_cores > 1) plan(sequential)
   return(y)
