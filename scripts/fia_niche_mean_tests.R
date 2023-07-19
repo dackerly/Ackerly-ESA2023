@@ -202,7 +202,7 @@ for(i in 2:ncol(cwdplots)){
     xlab("CWD (mm)")+
     ylab(names(cwdplots)[i])+
     theme_bw()
-  ggsave(paste("./results/kr_fia_results/", names(cwdplots)[i], "vs_cwd_scatter.png", sep=""), width=5, height=5)
+  ggsave(paste("./results/kr_fia_results/cch_niches_", names(cwdplots)[i], "_vs_cwd_scatter.png", sep=""), width=5, height=5)
 }
 
 for(i in 2:ncol(aetplots)){
@@ -212,5 +212,5 @@ for(i in 2:ncol(aetplots)){
     xlab("aet (mm)")+
     ylab(names(aetplots)[i])+
     theme_bw()
-  ggsave(paste("./results/kr_fia_results/", names(aetplots)[i], "vs_aet_scatter.png", sep=""), width=5, height=5)
+  ggsave(paste("./results/kr_fia_results/cch_niches_", names(aetplots)[i], "_vs_aet_scatter.png", sep=""), width=5, height=5)
 }
