@@ -34,7 +34,7 @@ for (i in 1:length(nct)) {
 
 {
   op=par(mfrow=c(2,3)) 
-  nct <- c(7,5,9)
+  nct <- c(5,15,17)
   # -15 removes Q. pacifica outlier
   for (i in 1:length(nct)) {
     mvar <- nct[i]
