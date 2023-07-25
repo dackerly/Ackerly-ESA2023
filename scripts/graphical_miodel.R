@@ -3,7 +3,7 @@ rm(list=ls())
 
 # assume equal niche breadth, and Guassian niche
 
-evmin=6
+evmin=0
 evmax=10
 
 nb <- 1
@@ -54,11 +54,11 @@ round(apply(res[,-1],2,mean,na.rm=T),2)
 round(apply(res[,-1],2,sd,na.rm=T),3)
 ### community figure
 
-# cc <- data.frame(mn=mn,dens=NA)
-# plot(ev,np,type='n',ylim=c(0,0.5))
-# for (i in 1:length(mn)) {
-#   cc$dens[i] <- dnorm(cv,mn[i])
-#   points(ev,dnorm(ev,mn[i]),nb,type='l')
-# }
-# abline(v=c(0.5,5))
-# weighted.mean(cc$mn,cc$dens)
+cc <- data.frame(mn=mn,dens=NA)
+plot(ev,np,type='n',ylim=c(0,0.5))
+for (i in 1:length(mn)) {
+  cc$dens[i] <- dnorm(ev,mn[i])
+  points(ev,dnorm(ev,mn[i]),nb,type='l')
+}
+abline(v=c(0.5,5))
+weighted.mean(cc$mn,cc$dens)
